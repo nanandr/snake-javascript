@@ -1,3 +1,3 @@
-#Snake Javascript
+# Snake Javascript
 
 Vanilla Javascript practice for LKS
