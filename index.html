@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake</title>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <p>Score</p>
+                <p id="score">0</p>
+            </div>
+            <h1>PYTHONS</h1>
+            <div>
+                <p>Time</p>
+                <p id="timer">00:00:00</p>
+            </div>
+        </header>
+        <canvas id="canvas" height="600" width="960"></canvas>
+        <footer>
+            <button id="replay" onclick="startGame()">Replay</button>
+            <button onclick="setGameOver()">Game Over (debug)</button>
+        </footer>
+    </div>
+    <script>
+        var canvas, ctx, score, time
+        canvas = document.getElementById('canvas')
+
+        var cell = 20
+        var rows = canvas.height / cell
+        var columns = canvas.width / cell
+
+        var direction = null
+
+        var snakeTail = []
+        var defaultLength = 6
+        var snakeLength = defaultLength
+
+        var snakeX = 0
+        var snakeY = 0
+
+        var prevX = snakeTail.length - 1
+        var prevY = snakeTail.length - 1
+
+        var nextX = 0
+        var nextY = 0
+
+        var food = []
+
+        var countFood = 0
+
+        var gameOver = false
+        var intervalGame, intervalFood, intervalTimer
+
+        window.onload = function() {
+            ctx = canvas.getContext('2d')
+
+            score = document.getElementById('score')
+
+            timer = document.getElementById('timer')
+
+            replay = document.getElementById('replay')
+
+            document.addEventListener('keydown', handleKeydown)
+
+            startGame()
+        }
+
+        function startGame(){
+            direction = null
+            snakeLength = defaultLength
+            replay.style.display = 'none'
+            gameOver = false
+
+            drawGrid(null)
+
+            //initialize food
+            for (let i = 0; i < 5; i++){
+                drawFood()
+            }   
+
+            intervalGame = setInterval(function(){
+                if(!gameOver){
+                    drawSnake()
+                    drawFood()
+                }
+                else{
+                    countFood = 0
+                    clearInterval(intervalGame)
+                    clearInterval(intervalTimer)
+                    clearInterval(intervalFood)
+                    replay.style.display = 'block'
+                }
+            }, 1000 / 4)
+
+            intervalFood = setInterval(function(){
+                drawFood()
+            }, 3000)
+
+            startTimer()
+        }
+
+        function drawSnake(){
+            score.innerHTML = (snakeLength-defaultLength)
+
+            drawGrid()
+
+            snakeX += nextX //input next to snake (controls)
+            snakeY += nextY
+
+            //border
+            if(snakeX < 0){
+                snakeX = columns - 1
+            }
+            if(snakeX > columns - 1){
+                snakeX = 0
+            }
+            if(snakeY < 0){
+                snakeY = rows - 1
+            }
+            if(snakeY > rows - 1){
+                snakeY = 0
+            }
+
+            
+            ctx.fillStyle = 'green'
+            for(let x = 0; x < snakeTail.length; x++){
+                ctx.fillRect(snakeTail[x].x * cell, snakeTail[x].y * cell, cell, cell)
+
+                if(snakeTail[x].x == snakeX && snakeTail[x].y == snakeY && direction !== null){
+                    gameOver = true
+                }
+            }
+            
+            snakeTail.push({
+                x: snakeX,
+                y: snakeY
+            })
+            while(snakeTail.length > snakeLength){
+                snakeTail.shift()
+            }
+
+            for(let y = 0; y < food.length; y++){
+                console.log(food[y].x + ' ' + food[y].y + ' & ' + snakeX + ' ' + snakeY)
+                if(snakeX == food[y].x && snakeY == food[y].y){
+                    snakeLength++
+                    food.splice(y, 1)
+                    countFood--
+                    drawFood()
+                }
+            }
+
+            console.log(food.length + ' FOOD LEFT')
+
+            //get previous snake to clear it later
+            // prev = snakeTail[0]
+            // drawGrid(prev)
+            // console.log(prev)
+            // ctx.clearRect(prev.x * cell, prev.y * cell, cell, cell)
+
+            // console.log(snakeX + ' ' + snakeY)
+            // console.log(snakeTail)
+        }
+
+        function drawFood(){
+            if(countFood < 5){
+                //get current food position
+                let foodX = random(columns)
+                let foodY = random(rows)
+
+                food = [...food, {
+                    x: foodX,
+                    y: foodY,
+                }]
+
+                ctx.fillStyle = 'red'
+                ctx.fillRect(foodX * cell, foodY * cell, cell, cell)
+                countFood++
+            }
+        }
+
+        function drawGrid(previous){
+            for(let x = 0; x < rows; x++){
+                for(let y = 0; y < columns; y++){
+                    ctx.fillStyle = (x + y) % 2 === 0 ? '#333' : '#444'
+                    if(previous == null){
+                        ctx.fillRect(y * cell, x * cell, cell, cell)
+                    }
+                    else{
+                        ctx.fillRect(previous.x * cell, previous.y * cell, cell, cell)
+                    }
+                }
+            }
+        }
+
+        function startTimer(){
+            let seconds = 0
+            intervalTimer = setInterval(function(){
+                seconds++
+                let hours = Math.floor(seconds / 3600)
+                let minutes = Math.floor((seconds - hours * 3600) / 60)
+                let remainingSeconds = seconds % 60
+
+                const format = formatNum(hours)+':'+formatNum(minutes)+':'+formatNum(remainingSeconds)
+                timer.innerHTML = format
+            }, 1000)
+        }
+
+        function formatNum(x){
+            return (x < 10 ? '0'+x : x)
+        }
+
+        function changeDirection(input, inputX, inputY, opposite){
+            if(input !== direction && direction !== opposite){
+                direction = input
+                nextX = inputX
+                nextY = inputY
+                console.log(direction)
+            }
+        }
+
+        function handleKeydown(event){
+            switch(event.keyCode){
+                case 37:
+                    changeDirection('left', -1, 0, 'right')
+                    break
+                case 38:
+                    changeDirection('up', 0, -1, 'down')
+                    break
+                case 39:
+                    changeDirection('right', 1, 0, 'left')
+                    break
+                case 40:
+                    changeDirection('down', 0, 1, 'up')
+                    break
+            }
+        }
+
+        function random(x){
+            return Math.floor(Math.random() * x) + 1 //1 to start at 1
+        }
+
+        function setGameOver(){
+            gameOver = true
+        }
+    </script>
+    <style>
+        body{
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0px;
+            margin: 0px;
+            background: #222;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        h1, h2, h3, p{
+            color: #88f;
+            margin: 0px;
+            padding: 0px;
+        }
+        h1{
+            font-size: 72px;
+        }
+        p{
+            font-size: x-large;
+        }
+        header{
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+        canvas {
+            display: block;
+        }
+        footer{
+            /* background: #88f; */
+            width: 100%;
+            flex-direction: column;
+            gap: 16px;
+            display: flex;
+            justify-content: center;
+        }
+        button{
+            font-size: xx-large;
+            padding: 16px;
+        }
+        .container{
+            outline: solid 1px #333;
+            width: 1024px;
+            height: 1024px;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            padding: 16px 8px;
+            box-sizing: border-box;
+            background: #225;
+            gap: 16px;
+        }
+    </style>
+</body>
+</html>
