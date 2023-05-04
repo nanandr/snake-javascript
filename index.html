@@ -50,8 +50,6 @@
 
         var food = []
 
-        var countFood = 0
-
         var gameOver = false
         var intervalGame, intervalFood, intervalTimer
 
@@ -78,17 +76,16 @@
             drawGrid(null)
 
             //initialize food
-            for (let i = 0; i < 5; i++){
-                drawFood()
-            }   
+            // for (let i = 0; i < 5; i++){
+            //     drawFood()
+            // }   
 
             intervalGame = setInterval(function(){
                 if(!gameOver){
                     drawSnake()
-                    drawFood()
+                    // drawFood()
                 }
                 else{
-                    countFood = 0
                     clearInterval(intervalGame)
                     clearInterval(intervalTimer)
                     clearInterval(intervalFood)
@@ -97,7 +94,7 @@
             }, 1000 / 4)
 
             intervalFood = setInterval(function(){
-                drawFood()
+                generateFood()
             }, 3000)
 
             startTimer()
@@ -107,6 +104,7 @@
             score.innerHTML = (snakeLength-defaultLength)
 
             drawGrid()
+            drawFood()
 
             snakeX += nextX //input next to snake (controls)
             snakeY += nextY
@@ -144,29 +142,25 @@
             }
 
             for(let y = 0; y < food.length; y++){
-                console.log(food[y].x + ' ' + food[y].y + ' & ' + snakeX + ' ' + snakeY)
+                console.log(food[y].x + ' ' + food[y].y + ' & ' + snakeX + ' ' + snakeY) //DEBUG
                 if(snakeX == food[y].x && snakeY == food[y].y){
                     snakeLength++
                     food.splice(y, 1)
-                    countFood--
-                    drawFood()
                 }
             }
 
-            console.log(food.length + ' FOOD LEFT')
-
-            //get previous snake to clear it later
-            // prev = snakeTail[0]
-            // drawGrid(prev)
-            // console.log(prev)
-            // ctx.clearRect(prev.x * cell, prev.y * cell, cell, cell)
-
-            // console.log(snakeX + ' ' + snakeY)
-            // console.log(snakeTail)
+            console.log(food.length + ' FOOD LEFT') //DEBUG
         }
 
         function drawFood(){
-            if(countFood < 5){
+            for(f = 0; f < food.length; f++){
+                ctx.fillStyle = 'red'
+                ctx.fillRect(food[f].x * cell, food[f].y * cell, cell, cell)
+            }
+        }
+
+        function generateFood(){
+            if(food.length < 5){
                 //get current food position
                 let foodX = random(columns)
                 let foodY = random(rows)
@@ -175,10 +169,6 @@
                     x: foodX,
                     y: foodY,
                 }]
-
-                ctx.fillStyle = 'red'
-                ctx.fillRect(foodX * cell, foodY * cell, cell, cell)
-                countFood++
             }
         }
 
@@ -218,7 +208,7 @@
                 direction = input
                 nextX = inputX
                 nextY = inputY
-                console.log(direction)
+                console.log(direction) //DEBUG
             }
         }
 
